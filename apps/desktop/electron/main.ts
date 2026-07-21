@@ -117,6 +117,7 @@ import {
   chatWindowWebPreferences,
   createSessionWindowRegistry,
   instanceWindowBounds,
+  secondaryWindowVibrancy,
   SESSION_WINDOW_MIN_HEIGHT,
   SESSION_WINDOW_MIN_WIDTH
 } from './session-windows'
@@ -7355,7 +7356,7 @@ function spawnSecondaryWindow({ sessionId, watch }: { sessionId?: string; watch?
     titleBarStyle: 'hidden',
     titleBarOverlay: getTitleBarOverlayOptions(),
     trafficLightPosition: IS_MAC ? WINDOW_BUTTON_POSITION : undefined,
-    vibrancy: IS_MAC ? 'sidebar' : undefined,
+    vibrancy: secondaryWindowVibrancy({ isMac: IS_MAC, darwinMajor: DARWIN_MAJOR }),
     opacity: windowOpacity(),
     icon,
     // Don't show until the renderer's first themed paint is ready. macOS
@@ -7438,7 +7439,7 @@ function createInstanceWindow() {
     titleBarStyle: 'hidden',
     titleBarOverlay: getTitleBarOverlayOptions(),
     trafficLightPosition: IS_MAC ? WINDOW_BUTTON_POSITION : undefined,
-    vibrancy: IS_MAC ? 'sidebar' : undefined,
+    vibrancy: secondaryWindowVibrancy({ isMac: IS_MAC, darwinMajor: DARWIN_MAJOR }),
     opacity: windowOpacity(),
     icon,
     show: false,
