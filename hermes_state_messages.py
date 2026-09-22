@@ -939,7 +939,7 @@ class SessionMessagesMixin:
                 ORDER BY candidate.active DESC, candidate.id DESC LIMIT 1
             )
             ORDER BY page.display_order ASC"""
-        with self._read_ctx() as conn:
+        def _read(conn):
             conn.execute("BEGIN")
             try:
                 if conn.execute(missing_sql, (session_id,)).fetchone() is not None:
@@ -949,6 +949,8 @@ class SessionMessagesMixin:
             finally:
                 if conn.in_transaction:
                     conn.execute("ROLLBACK")
+
+        return self._read_retrying_ioerr(_read)
 
     def _row_to_message_dict(self, row, *, warn_context: str, summary_flag: bool) -> Dict[str, Any]:
         """``dict(row)`` with content/tool_calls/display_metadata decoded; *summary_flag* keeps
