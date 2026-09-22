@@ -472,7 +472,8 @@ def _export_markdown(db, args, filters, redact):
     output_dir = _export_dir(args.output)
 
     def _export_one(session_id: str, *, include_lineage: bool = False):
-        data = db.export_session_lineage(session_id) if include_lineage else db.export_session(session_id)
+        export = db.export_session_lineage if include_lineage else db.export_session
+        data = export(session_id, include_compacted=True)
         if not data:
             return None, None
         data = redact(data)

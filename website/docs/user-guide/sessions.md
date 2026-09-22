@@ -436,6 +436,8 @@ Trace exports are secret-redacted by default (they're meant to leave the machine
 
 Pass `--format md` or `--format qmd` when you want a readable, file-based archive before hiding or deleting old sessions. Markdown/QMD exports write one file per session into a directory (default: `~/.hermes/session-exports`).
 
+These archives include conversation history retained by compaction, with carried-forward copies shown once. Turns removed by undo or rewind remain excluded.
+
 ```bash
 # Export one session to Markdown
 hermes sessions export --format md --session-id 20250305_091523_a1b2c3d4

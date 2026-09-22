@@ -276,21 +276,31 @@ class SessionPortabilityMixin:
 
     # ── Export ─────────────────────────────────────────────────────────────
 
-    def _with_messages(self, session: Dict[str, Any]) -> Dict[str, Any]:
-        messages = self.get_messages(session["id"])
+    def _with_messages(self, session: Dict[str, Any], *, include_compacted: bool = False) -> Dict[str, Any]:
+        if include_compacted:
+            # An archive materializes the full transcript. Read it in one snapshot so a content
+            # rewrite cannot invalidate display-order indexes between backfill and pagination.
+            active_clause = self._active_clause(include_inactive=False, include_compacted=True)
+            rows = self._read_all(
+                f"SELECT * FROM messages WHERE session_id = ?{active_clause} ORDER BY id", (session["id"],))
+            messages = [self._row_to_message_dict(row, warn_context="export_session", summary_flag=True)
+                        for row in self._dedupe_display_generations(rows)]
+        else:
+            messages = self.get_messages(session["id"])
         return {**session, "messages": messages, "timings": _export_timings(messages, session["id"])}
 
-    def export_session(self, session_id: str) -> Optional[Dict[str, Any]]:
-        """Export a single session with all its messages as a dict."""
+    def export_session(self, session_id: str, *, include_compacted: bool = False) -> Optional[Dict[str, Any]]:
+        """Export active context by default; archives opt into deduped compaction-retained history."""
         session = self.get_session(session_id)
-        return self._with_messages(session) if session else None
+        return self._with_messages(session, include_compacted=include_compacted) if session else None
 
-    def export_session_lineage(self, session_id: str) -> Optional[Dict[str, Any]]:
+    def export_session_lineage(self, session_id: str, *, include_compacted: bool = False) -> Optional[Dict[str, Any]]:
         """Export a compression lineage as one logical session dict."""
         lineage_ids = self.get_compression_lineage(session_id)
         if not lineage_ids:
             return None
-        segments = [seg for seg in map(self.export_session, lineage_ids) if seg]
+        exports = (self.export_session(sid, include_compacted=include_compacted) for sid in lineage_ids)
+        segments = [seg for seg in exports if seg]
         if not segments:
             return None
         messages = [msg for seg in segments for msg in (seg.get("messages") or [])]
